@@ -22,4 +22,4 @@ spring:
       max-file-size: 20MB
 
 printer:
-  topic: test_001
+  topic: deviceChannel.x00000001

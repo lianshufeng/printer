@@ -18,9 +18,10 @@ public class FileController {
     @Autowired
     FileService fileService;
     @RequestMapping("uploading")
-    public String uploadingFile(MultipartFile file){
+    public String uploadingFile(MultipartFile file,String device){
         Assert.isTrue(!file.isEmpty(),"请选择文件");
-        return fileService.saveFile(file);
+        Assert.isTrue(!device.isEmpty(),"请选择打印机设备");
+        return fileService.saveFile(file,device);
 
 
     }

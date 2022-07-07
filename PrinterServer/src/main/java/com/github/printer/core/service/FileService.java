@@ -19,14 +19,13 @@ import java.util.UUID;
 
 @Service
 public class FileService {
-    @Value("${printer.topic}")
-    private  String topic;
 
     private final String path = System.getProperty("user.dir") + File.separator + "file";
 
     @Autowired
     MQClient mq;
-    public String saveFile(MultipartFile files) {
+    public String saveFile(MultipartFile files,String device) {
+        String topic = "deviceChannel."+device;
 
         File file = new File(path);
         if (!file.exists()) {
