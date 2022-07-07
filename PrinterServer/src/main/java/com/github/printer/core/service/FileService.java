@@ -1,71 +1,64 @@
 package com.github.printer.core.service;
 
 import com.github.microservice.components.activemq.client.MQClient;
+import com.github.printer.core.conf.TopicConf;
+import lombok.Cleanup;
 import lombok.SneakyThrows;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 public class FileService {
 
-    private final String path = System.getProperty("user.dir") + File.separator + "file";
+    private final static File PrinterTmpFile = new File(System.getProperty("user.dir") + "/printer_tmp/");
+
 
     @Autowired
     MQClient mq;
-    public String saveFile(MultipartFile files,String device) {
-        String topic = "deviceChannel."+device;
 
-        File file = new File(path);
-        if (!file.exists()) {
-            file.mkdirs();
+    @Autowired
+    private TopicConf topicConf;
+
+    @SneakyThrows
+    public String saveFile(MultipartFile files, String device) {
+        if (!PrinterTmpFile.exists()) {
+            PrinterTmpFile.mkdirs();
         }
 
-        String OriginalFilename = files.getOriginalFilename();
-        String suffixName = OriginalFilename.substring(OriginalFilename.lastIndexOf("."));
+        final String topic = String.format("%s.%s", topicConf.getTopic(), device);
+        String suffixName = FilenameUtils.getExtension(files.getOriginalFilename());
+        String fileName = UUID.randomUUID().toString().replaceAll("-", "") + "." + suffixName;
+        File saveFile = new File(PrinterTmpFile.getAbsolutePath() + "/" + fileName);
+        @Cleanup InputStream inputStream = files.getInputStream();
+        @Cleanup OutputStream outputStream = new FileOutputStream(saveFile);
+        StreamUtils.copy(inputStream, outputStream);
 
-        String fileName= UUID.randomUUID() + suffixName;
-        String filePath = path + File.separator +fileName;
-
-
-        OutputStream outputStream = null;
-        try {
-            outputStream = new FileOutputStream(filePath);
-            FileCopyUtils.copy(files.getInputStream(), outputStream);
-        } catch (Exception e) {
-            return "上传失败";
-        }
-        mq.sendObject(topic,fileName);
+        mq.sendObject(topic, fileName);
         return "打印中，请等待";
-
-
     }
 
 
     @SneakyThrows
     public void export(HttpServletResponse response, String fileName) {
-        File file = new File(path + File.separator + fileName);
-        Assert.isTrue(file.exists(),"文件不存在");
-        FileInputStream fileInputStream = new FileInputStream(file);
-//        response.setContentType("application/msexcel");
-        fileName = new String(fileName.getBytes(), StandardCharsets.ISO_8859_1);
+        File file = new File(PrinterTmpFile.getAbsolutePath() + "/" + fileName);
+        Assert.isTrue(file.exists(), "文件不存在");
+        @Cleanup FileInputStream fileInputStream = new FileInputStream(file);
         response.addHeader("Content-Disposition", "filename=" + fileName);
-        OutputStream outputStream = response.getOutputStream();
-        outputStream.write(fileInputStream.readAllBytes());
-        outputStream.close();
-
-
+        @Cleanup OutputStream outputStream = response.getOutputStream();
+        StreamUtils.copy(fileInputStream, outputStream);
+        outputStream.flush();
     }
 
 
