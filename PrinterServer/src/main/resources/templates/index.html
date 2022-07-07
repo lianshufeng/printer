@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" type="text/css" href="./common.css" />
+    <link rel="stylesheet" type="text/css" href="./index.css" />
+</head>
+<body>
+<div class="page flex-col">
+    <div class="wrap1 flex-col">
+        <div class="box1 flex-col"></div>
+<!--        <span class="txt1">云打印</span>-->
+        <img
+                class="img1"
+                referrerpolicy="no-referrer"
+                src="https://lanhu.oss-cn-beijing.aliyuncs.com/SketchPngb8603babaf17cf7f881b2cc3fa3c0333e5f601f7f5eaa2653355cfb476531a42"
+        />
+<!--        <div class="box2 flex-col"><span class="info1">选择打印文件</span></div>-->
+    </div>
+
+    <form action="/file/uploading" method="post" enctype="multipart/form-data">
+<!--        <span>标题：</span>-->
+<!--        <input type="text" name="title" /><br>-->
+        <span>文件：</span>
+        <input type="file" name="file" /><br>
+        <input type="submit" value="上传"  />
+    </form>
+</div>
+</body>
+</html>

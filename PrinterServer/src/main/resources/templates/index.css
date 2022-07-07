@@ -1,0 +1,20 @@
+.box2 {
+    height: 50px;
+    border-radius: 25px;
+    background: url(https://lanhu.oss-cn-beijing.aliyuncs.com/SketchPng999e5dd8013a322c9e3ef002e149b6f18be65452e2f0455c5e3d0fbc438a593c)
+    100% no-repeat;
+    width: 252px;
+    margin: 142px 0 0 19px;
+}
+.info1 {
+    width: 144px;
+    height: 33px;
+    display: inline-block;
+    color: rgba(255, 255, 255, 1);
+    font-size: 24px;
+    font-family: PingFangSC-Regular;
+    white-space: nowrap;
+    line-height: 33px;
+    text-align: left;
+    margin: 9px 0 0 54px;
+}
