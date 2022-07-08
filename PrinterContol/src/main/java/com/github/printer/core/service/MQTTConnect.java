@@ -1,6 +1,9 @@
 package com.github.printer.core.service;
 
+import com.github.microservice.core.util.JsonUtil;
 import com.github.printer.core.conf.MQTTConf;
+import com.github.printer.core.helper.PrintCallHelper;
+import groovy.transform.AutoImplement;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.fusesource.hawtbuf.Buffer;
@@ -12,6 +15,8 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.Charset;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -21,6 +26,9 @@ public class MQTTConnect implements ApplicationRunner {
 
     @Autowired
     private MQTTConf mqttConf;
+
+    @Autowired
+    private PrintCallHelper printCallHelper;
 
     //尝试次数
     private int tryCount = 0;
@@ -36,10 +44,17 @@ public class MQTTConnect implements ApplicationRunner {
     /**
      * 接受到数据
      */
+    @SneakyThrows
     private void receive(UTF8Buffer destination, Buffer body, Runnable runnable) {
         String destinationName = destination.toString();
         String ret = new String(body.toByteArray(), Charset.forName("UTF-8"));
-        log.info("dest : {} - ret : {}", destinationName, ret);
+        log.info("receive : {} - {}", destinationName, ret);
+        var content = JsonUtil.toObject(ret, Map.class);
+        if (content != null) {
+            Optional.ofNullable(content.get("fileName")).ifPresent((it) -> {
+                printCallHelper.printFile(String.valueOf(it));
+            });
+        }
     }
 
 
@@ -86,6 +101,7 @@ public class MQTTConnect implements ApplicationRunner {
             @Override
             public void onDisconnected() {
                 log.info("mqtt: {} ", "onConnected");
+                reConnec();
             }
 
             @Override

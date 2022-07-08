@@ -24,7 +24,7 @@ public class FileController {
         Assert.isTrue(!device.isEmpty(), "请选择打印机设备");
         return Map.of(
                 "time", System.currentTimeMillis(),
-                "text", fileService.saveFile(file, device)
+                "ret", fileService.saveFile(file, device)
         );
 
 
