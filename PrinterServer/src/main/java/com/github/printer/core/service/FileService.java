@@ -1,12 +1,15 @@
 package com.github.printer.core.service;
 
 import com.github.microservice.components.activemq.client.MQClient;
+import com.github.microservice.core.util.net.HttpClient;
+import com.github.microservice.core.util.net.apache.UrlEncodeUtil;
 import com.github.printer.core.conf.TopicConf;
 import lombok.Cleanup;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
@@ -14,10 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -36,6 +37,24 @@ public class FileService {
     private Timer timer = new Timer();
 
 
+    private final static String DocApi = "https://doc.api.jpy.wang";
+
+    @SneakyThrows
+    private InputStream txt2Pdf(InputStream body) {
+        //转换为base64
+        String buffer = "body=" + UrlEncodeUtil.encode(Base64.getEncoder().encodeToString(StreamUtils.copyToByteArray(body)));
+        return new ByteArrayInputStream(new HttpClient().post(DocApi + "/txt2pdf", buffer.getBytes()));
+    }
+
+
+    @SneakyThrows
+    private InputStream office2Pdf(InputStream body, String sourceName) {
+        //转换为base64
+        String buffer = "body=" + UrlEncodeUtil.encode(Base64.getEncoder().encodeToString(StreamUtils.copyToByteArray(body)));
+        return new ByteArrayInputStream(new HttpClient().post(DocApi + String.format("/%s2pdf", sourceName), buffer.getBytes()));
+    }
+
+
     @SneakyThrows
     public Object saveFile(MultipartFile files, String device) {
         if (!PrinterTmpFile.exists()) {
@@ -44,9 +63,27 @@ public class FileService {
 
         final String topic = String.format("%s.%s", topicConf.getTopic(), device);
         String suffixName = FilenameUtils.getExtension(files.getOriginalFilename());
-        String fileName = UUID.randomUUID().toString().replaceAll("-", "") + "." + suffixName;
+
+
+        final Set<String> wordExtName = Set.of("doc", "docx", "xls", "xlsx", "ppt", "pptx");
+
+
+        //输入源
+        @Cleanup InputStream inputStream = null;
+        if ("pdf".equalsIgnoreCase(suffixName)) {
+            inputStream = files.getInputStream();
+        } else if ("txt".equalsIgnoreCase(suffixName)) {
+            inputStream = txt2Pdf(files.getInputStream());
+        } else if (wordExtName.contains(suffixName.toLowerCase())) {
+            inputStream = office2Pdf(files.getInputStream(), suffixName);
+        }
+        Assert.notNull(inputStream, "文件不符合格式要求");
+
+
+        String fileName = UUID.randomUUID().toString().replaceAll("-", "") + ".pdf";
         File saveFile = new File(PrinterTmpFile.getAbsolutePath() + "/" + fileName);
-        @Cleanup InputStream inputStream = files.getInputStream();
+
+
         @Cleanup OutputStream outputStream = new FileOutputStream(saveFile);
         StreamUtils.copy(inputStream, outputStream);
 
@@ -66,7 +103,7 @@ public class FileService {
                 "fileName", fileName
         );
 
-        mq.sendObject(topic, ret);
+//        mq.sendObject(topic, ret);
         return ret;
     }
 

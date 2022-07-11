@@ -59,7 +59,7 @@ public class PrintCallHelper {
 
     @SneakyThrows
     private File downloadFile(String fileName) {
-        String url = String.format("%s/download/%s", printerServerConf.getHostUrl(), fileName);
+        String url = String.format("%s/file/download/%s", printerServerConf.getHostUrl(), fileName);
         log.info("download - {}", url);
         File file = new File(PrinterTmpFile.getAbsolutePath() + "/" + fileName);
         FileUtils.writeByteArrayToFile(file, new HttpClient().get(url));
