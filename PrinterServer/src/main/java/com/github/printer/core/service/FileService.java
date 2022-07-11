@@ -103,7 +103,7 @@ public class FileService {
                 "fileName", fileName
         );
 
-//        mq.sendObject(topic, ret);
+        mq.sendObject(topic, ret);
         return ret;
     }
 
