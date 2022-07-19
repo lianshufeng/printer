@@ -39,12 +39,12 @@ public class FileService {
 
     private final static String DocApi = "https://doc.api.jpy.wang";
 
-    @SneakyThrows
-    private InputStream txt2Pdf(InputStream body) {
-        //转换为base64
-        String buffer = "body=" + UrlEncodeUtil.encode(Base64.getEncoder().encodeToString(StreamUtils.copyToByteArray(body)));
-        return new ByteArrayInputStream(new HttpClient().post(DocApi + "/txt2pdf", buffer.getBytes()));
-    }
+//    @SneakyThrows
+//    private InputStream txt2Pdf(InputStream body) {
+//        //转换为base64
+//        String buffer = "body=" + UrlEncodeUtil.encode(Base64.getEncoder().encodeToString(StreamUtils.copyToByteArray(body)));
+//        return new ByteArrayInputStream(new HttpClient().post(DocApi + "/txt2pdf", buffer.getBytes()));
+//    }
 
 
     @SneakyThrows
@@ -65,15 +65,13 @@ public class FileService {
         String suffixName = FilenameUtils.getExtension(files.getOriginalFilename());
 
 
-        final Set<String> wordExtName = Set.of("doc", "docx", "xls", "xlsx", "ppt", "pptx");
+        final Set<String> wordExtName = Set.of("txt", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "jpg", "png");
 
 
         //输入源
         @Cleanup InputStream inputStream = null;
         if ("pdf".equalsIgnoreCase(suffixName)) {
             inputStream = files.getInputStream();
-        } else if ("txt".equalsIgnoreCase(suffixName)) {
-            inputStream = txt2Pdf(files.getInputStream());
         } else if (wordExtName.contains(suffixName.toLowerCase())) {
             inputStream = office2Pdf(files.getInputStream(), suffixName);
         }
